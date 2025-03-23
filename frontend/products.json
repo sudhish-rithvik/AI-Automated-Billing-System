@@ -1,0 +1,20 @@
+{
+    "Chocolate_Smoodh": {
+        "price": 1.0
+    },
+    "Double_Chocolate": {
+        "price": 1.2
+    },
+    "Jim_Jam": {
+        "price": 0.8
+    },
+    "Milk_Bikis_Blue": {
+        "price": 0.6
+    },
+    "Milk_Bikis_White": {
+        "price": 1.6
+    },
+    "Small_Bourbon": {
+        "price": 0.7
+    }
+}

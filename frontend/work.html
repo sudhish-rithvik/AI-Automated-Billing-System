@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Checkout - Cooking Mode</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+        #left-pane, #right-pane {
+            flex: 1;
+            padding: 20px;
+        }
+        #video-feed { width: 640px; height: 480px; }
+        #ip-container {
+            margin-bottom: 20px;
+        }
+        #ip-input {
+            padding: 8px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .error {
+            color: red;
+            display: none;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Smart Checkout - Cooking Mode</h1>
+    <div id="container">
+        <div id="left-pane">
+            <div id="ip-container">
+                <input type="text" id="ip-input" placeholder="Enter Raspberry Pi IP (e.g. 192.168.137.111)" value="192.168.98.252">
+                <button id="connect-btn">Connect</button>
+                <div id="connection-error" class="error">Failed to connect to the Raspberry Pi</div>
+            </div>
+            <h2>Camera Feed</h2>
+            <img id="video-feed" src="" alt="Camera Feed">
+            <div>
+                <button id="start-btn" disabled>Start Detection</button>
+                <button id="stop-btn" disabled>Stop Detection</button>
+            </div>
+        </div>
+        <div id="right-pane">
+            <h2>Dashboard</h2>
+            <table id="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Ingredients</th>
+                        <th>Weight</th>
+                        <th>Nutrients</th>
+                        <th>Calories</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be updated in real time -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        let socket;
+        const ipInput = document.getElementById('ip-input');
+        const connectBtn = document.getElementById('connect-btn');
+        const videoFeed = document.getElementById('video-feed');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const tableBody = document.getElementById('dashboard-table').getElementsByTagName('tbody')[0];
+        const connectionError = document.getElementById('connection-error');
+
+        function connectToRaspberryPi() {
+            const ipAddress = ipInput.value.trim();
+            if (!ipAddress) {
+                connectionError.textContent = 'Please enter an IP address';
+                connectionError.style.display = 'block';
+                return;
+            }
+
+            // Update video feed source
+            videoFeed.src = http://${ipAddress}:5000/video_feed;
+            
+            // Create new socket connection
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            socket = io(http://${ipAddress}:5000);
+            
+            socket.on('connect', () => {
+                connectionError.style.display = 'none';
+                startBtn.disabled = false;
+                stopBtn.disabled = false;
+                console.log('Connected to Raspberry Pi');
+            });
+
+            socket.on('connect_error', () => {
+                connectionError.style.display = 'block';
+                startBtn.disabled = true;
+                stopBtn.disabled = true;
+                console.error('Failed to connect to Raspberry Pi');
+            });
+
+            socket.on('detection_update', function(data) {
+                tableBody.innerHTML = '';
+                data.products.forEach(item => {
+                    const row = document.createElement('tr');
+                    const ingCell = document.createElement('td');
+                    ingCell.textContent = item.label;
+                    const weightCell = document.createElement('td');
+                    weightCell.textContent = item.weight ? item.weight.toFixed(2) : "";
+                    const nutrientsCell = document.createElement('td');
+                    nutrientsCell.textContent = item.nutrients;
+                    const caloriesCell = document.createElement('td');
+                    caloriesCell.textContent = item.calories ? item.calories.toFixed(2) : "";
+                    row.appendChild(ingCell);
+                    row.appendChild(weightCell);
+                    row.appendChild(nutrientsCell);
+                    row.appendChild(caloriesCell);
+                    tableBody.appendChild(row);
+                });
+            });
+        }
+
+        connectBtn.addEventListener('click', connectToRaspberryPi);
+        startBtn.addEventListener('click', function() {
+            socket.emit('start_detection');
+        });
+
+        stopBtn.addEventListener('click', function() {
+            socket.emit('stop_detection');
+        });
+
+        // Try to connect with default IP on page load
+        connectToRaspberryPi();
+    </script>
+</body>
+</html>
